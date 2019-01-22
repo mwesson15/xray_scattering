@@ -54,7 +54,6 @@ vertices = [mp.Vector3(-0.5*lw-0.5*a,-0.5*gh,0),
 #mp.Block(material=grating, size=mp.Vector3(lw,gh,mp.inf), center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0)),
 
 geometry = [mp.Block(material=substrate, size=mp.Vector3(sx,dpml+dsub,mp.inf), center=mp.Vector3(0,-0.5*sy+0.5*(dpml+dsub),0)),
-            #mp.Block(material=grating, size=mp.Vector3(lw,gh,mp.inf), center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0))]
             mp.Prism(vertices, height=mp.inf, center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0), material=grating)]
 # symmetries=[mp.Mirror(mp.X)]
 symmetries = []
