@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from source import sources as src
 
+#This code is meant to use the source class's gaussian_src() function by using it to create a 2D Gaussian Wave
+
 #Define some variables
 delta_y = 1
 
