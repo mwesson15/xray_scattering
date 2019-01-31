@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from general import general_functions as gf
 
 #This code is meant to display a Gaussian beam over a 2D space and check its characteristics
+
 #Define some variables
 delta_y = 1
 
