@@ -17,5 +17,4 @@ print(coords)
 xy_mag = (x-origin[0])**2 + np.square(y-origin[1])
 rz_mag = np.square(coords[0,:]) + np.square(coords[1,:])
 
-#print(xy_mag - rz_mag)
-#The difference between the two magintudes
+print(xy_mag - rz_mag)
