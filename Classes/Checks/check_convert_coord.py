@@ -1,6 +1,9 @@
 import numpy as np
 from general import general_functions as gf
 
+#This code is meant to check the convert_coord() function found in general.py. It's used when converting from the (x,y)
+#coordinates of the simulation and the (z, r) coordinates of the Gaussian Beam source
+
 x = 0
 y_min = -10
 y_max = 10
