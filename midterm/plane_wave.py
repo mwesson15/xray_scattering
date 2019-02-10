@@ -25,7 +25,7 @@ k_point = mp.Vector3(np.cos(alpha), np.sin(alpha)).scale(f)
 
 sources = [
     mp.Source(
-        mp.ContinuousSource(fcen),
+        mp.ContinuousSource(f),
         component=mp.Ez,
         center=mp.Vector3(-0.5 * sx, 0),
         size=mp.Vector3(0, sy),
