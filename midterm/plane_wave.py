@@ -21,7 +21,10 @@ alpha = np.pi/4
 kdir = mp.Vector3(np.cos(alpha), np.sin(alpha))  # direction of k (length is irrelevant)
 k = kdir.unit().scale(2 * np.pi * f)  # k with correct length
 
-k_point = mp.Vector3(np.cos(alpha), np.sin(alpha)).scale(f)
+if alpha == 0:
+    k_point = mp.Vector3()
+else:
+    k_point = mp.Vector3(np.cos(alpha), np.sin(alpha)).scale(f)
 
 sources = [
     mp.Source(
