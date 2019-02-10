@@ -24,7 +24,7 @@ n = 1 # refractive index of material containing the source
 k = kdir.unit().scale(2 * np.pi * fcen * n)  # k with correct length
 
 if alpha <= np.pi/6:
-    k_point = mp.Vector3(y=2*np.pi*f*np.sin(alpha))
+    k_point = mp.Vector3(y=2*np.pi*f*np.tan(alpha))
 else:
     k_point = mp.Vector3(y=2*np.pi*f*np.cos(alpha))
 
