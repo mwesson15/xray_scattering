@@ -2,7 +2,7 @@ import meep as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-dpml = 5
+dpml = 2
 sx = 100
 sy = 100
 resolution = 3
@@ -17,19 +17,11 @@ def pw_amp(k, x0):
         return np.exp(1j * k.dot(x + x0))
     return _pw_amp
 
-alpha = np.pi/6
-fcen = 0.15  # pulse center frequency
+alpha = np.pi/4
 kdir = mp.Vector3(np.cos(alpha), np.sin(alpha))  # direction of k (length is irrelevant)
-n = 1 # refractive index of material containing the source
-k = kdir.unit().scale(2 * np.pi * fcen * n)  # k with correct length
+k = kdir.unit().scale(2 * np.pi * f)  # k with correct length
 
-if alpha <= np.pi/6:
-    k_point = mp.Vector3(y=2*np.pi*f*np.tan(alpha))
-else:
-    k_point = mp.Vector3(y=2*np.pi*f*np.cos(alpha))
-
-
-geometry = []
+k_point = mp.Vector3(np.cos(alpha), np.sin(alpha)).scale(f)
 
 sources = [
     mp.Source(
