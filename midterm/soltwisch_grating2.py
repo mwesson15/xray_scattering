@@ -1,6 +1,6 @@
 #Lengths are in nm
 
-#Defined sx and sy to be the simulation size (opposite of how David is defining it)
+#Defined sx and sy to be the simulation size without the PML(opposite of how David is defining it)
 sx=150
 sy=155.64
 
