@@ -30,7 +30,8 @@ sa = 90.91              #sidewall angle (deg)
 # br = 1.302             #bottom radius
 # sa = 84.73              #sidewall angle (deg)
 
-a = gh/np.tan(sa*2*np.pi/360) # intermediate for vertex calculation
+tw = gh/np.tan(sa*2*np.pi/360) # part to subtract from top of grating width
+a = (gh-tr)/np.tan(sa*2*np.pi/360) # intermediate for vertex calculation
 
 #2 periods of grating
 sx = dpml+2*gp+dpml
@@ -53,17 +54,50 @@ grating = mp.Medium(index=ind, D_conductivity=2*math.pi*freq*cond/ind)
 #one for substrate, one for grating superstructure, using trapezoid prism to approximate right now
 vtx = [mp.Vector3(-0.5*lw-0.5*a+gp/2,-0.5*gh,0),
             mp.Vector3(0.5*lw+0.5*a+gp/2,-0.5*gh,0),
-            mp.Vector3(0.5*lw-0.5*a+gp/2,0.5*gh,0),
-            mp.Vector3(-0.5*lw+0.5*a+gp/2,0.5*gh,0)]
+            mp.Vector3(0.5*lw-0.5*a+gp/2,0.5*gh-tr,0),
+            mp.Vector3(-0.5*lw+0.5*a+gp/2,0.5*gh-tr,0)]
 
 vtx2 = [mp.Vector3(-0.5*lw-0.5*a-gp/2,-0.5*gh,0),
             mp.Vector3(0.5*lw+0.5*a-gp/2,-0.5*gh,0),
-            mp.Vector3(0.5*lw-0.5*a-gp/2,0.5*gh,0),
-            mp.Vector3(-0.5*lw+0.5*a-gp/2,0.5*gh,0)]
+            mp.Vector3(0.5*lw-0.5*a-gp/2,0.5*gh-tr,0),
+            mp.Vector3(-0.5*lw+0.5*a-gp/2,0.5*gh-tr,0)]
+
+#rounded corners
+c1 = mp.Cylinder(radius=tr,
+            height=mp.inf,
+            axis=mp.Vector3(0,0,1),
+            center=mp.Vector3(-gp/2-lw/2+tw/2+tr,-sy/2+dpml+dsub+gh-tr, 0),
+            material=grating)
+c2 = mp.Cylinder(radius=tr,
+            height=mp.inf,
+            axis=mp.Vector3(0,0,1),
+            center=mp.Vector3(-gp/2+lw/2-tw/2-tr,-sy/2+dpml+dsub+gh-tr, 0),
+            material=grating)
+c3 = mp.Cylinder(radius=tr,
+            height=mp.inf,
+            axis=mp.Vector3(0,0,1),
+            center=mp.Vector3(gp/2-lw/2+tw/2+tr,-sy/2+dpml+dsub+gh-tr, 0),
+            material=grating)
+c4 = mp.Cylinder(radius=tr,
+            height=mp.inf,
+            axis=mp.Vector3(0,0,1),
+            center=mp.Vector3(gp/2+lw/2-tw/2-tr,-sy/2+dpml+dsub+gh-tr, 0),
+            material=grating)
+
+#top block
+b1 = mp.Block(center=mp.Vector3(-gp/2,-sy/2+dpml+dsub+gh-tr/2), size=mp.Vector3(lw-tw-2*tr,tr,mp.inf), material=grating)
+b2 = mp.Block(center=mp.Vector3(gp/2,-sy/2+dpml+dsub+gh-tr/2), size=mp.Vector3(lw-tw-2*tr,tr,mp.inf), material=grating)
+
+#ellipsoid cutout
+e1 = mp.Ellipsoid(center=mp.Vector3(0,-sy/2+dpml+dsub,0), size=mp.Vector3(gp-lw-a,br,mp.inf), material=mp.Medium(epsilon=1))
+e2 = mp.Ellipsoid(center=mp.Vector3(-gp,-sy/2+dpml+dsub,0), size=mp.Vector3(gp-lw-a,br,mp.inf), material=mp.Medium(epsilon=1))
+e3 = mp.Ellipsoid(center=mp.Vector3(gp,-sy/2+dpml+dsub,0), size=mp.Vector3(gp-lw-a,br,mp.inf), material=mp.Medium(epsilon=1))
+
 
 geometry = [mp.Block(material=substrate, size=mp.Vector3(sx,dpml+dsub,mp.inf), center=mp.Vector3(0,-0.5*sy+0.5*(dpml+dsub),0)),
             mp.Prism(vtx, height=mp.inf, center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0), material=grating),
-            mp.Prism(vtx2, height=mp.inf, center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0), material=grating)]
+            mp.Prism(vtx2, height=mp.inf, center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0), material=grating),
+            c1, c2, c3, c4, b1, b2, e1, e2, e3]
 sym = []
 # sym = [mp.Mirror(mp.Y)]
 
