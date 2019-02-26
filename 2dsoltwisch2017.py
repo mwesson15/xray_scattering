@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 
 from midterm.materials import Silicon
 
+#project z direction onto xy axis
+
 #set up geometry
+ts = 100               # timesteps
 resolution = 10.
 dpml = 1.             # PML thickness
 dsub = 3.             # substrate thickness
@@ -99,18 +102,15 @@ geometry = [mp.Block(material=substrate, size=mp.Vector3(sx,dpml+dsub,mp.inf), c
             mp.Prism(vtx, height=mp.inf, center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0), material=grating),
             mp.Prism(vtx2, height=mp.inf, center=mp.Vector3(0,-0.5*sy+dpml+dsub+0.5*gh,0), material=grating),
             c1, c2, c3, c4, b1, b2, e1, e2, e3]
-sym = [mp.Mirror(mp.X)]
+sym = []
 
 #set up source
 ng = 1 #index of medium wave is propagating in
 
 theta = 1.09 * 2*np.pi/360 #in fig 6 these are in interval [0.3,1.2]
-k = mp.Vector3(0,-np.sin(theta),np.cos(theta)).scale(freq*ng) # complex fields for oblique angles
-src_pt = mp.Vector3(0,sy/2-dpml-dpad/2,0) # plane of incidence in xy axis at front of cell
-src_pt2 = mp.Vector3(0,sy/2-dpml-dpad-gh/2,0)
-src_pt3 = mp.Vector3(-gp,0,0)
-src_pt4 = mp.Vector3(gp,0,0)
-src_pt5 = mp.Vector3(0,0,0)
+k = mp.Vector3(0,-np.sin(theta),0).scale(freq*ng) # scaled field incidence
+k = mp.Vector3(0,0,0)
+src_pt = mp.Vector3(0,sy/2-dpml,0) # plane of incidence top of cell
 
 def pw_amp(k,x0):
     def _pw_amp(x):
@@ -120,56 +120,35 @@ def pw_amp(k,x0):
 #fix this so that it's all the vacuum region
 '''Energy isn't allowed to dissipate??? the value of E
 should be one but somehow max is 10^10?? (ask jason)'''
-'''ask jason about his fixed source'''
 sources = [mp.Source(mp.ContinuousSource(freq),
-                     component=mp.Ez,
+                     component=-mp.Ey,
+                     amplitude=np.sin(theta),
                      center=src_pt,
-                     size=mp.Vector3(sx,dpad,0),
-                     amp_func=pw_amp(k,src_pt)),
-            mp.Source(mp.ContinuousSource(freq),
-                    component=mp.Ez,
-                    center=src_pt2,
-                    size=mp.Vector3(gp-lw-a,gh,0),
-                    amp_func=pw_amp(k,src_pt2)),
-            mp.Source(mp.ContinuousSource(freq),
-                    component=mp.Ez,
-                    center=src_pt3,
-                    size=mp.Vector3(gp-lw-a,gh,0),
-                    amp_func=pw_amp(k,src_pt3)),
-            mp.Source(mp.ContinuousSource(freq),
-                    component=mp.Ez,
-                    center=src_pt4,
-                    size=mp.Vector3(gp-lw-a,gh,0),
-                    amp_func=pw_amp(k,src_pt4))]
-#full space source
-# sources = [mp.Source(mp.ContinuousSource(freq),
-#                      component=mp.Ez,
-#                      center=src_pt5,
-#                      size=mp.Vector3(sx,sy,0),
-#                      amp_func=pw_amp(k,src_pt5))]
+                     size=mp.Vector3(sx,0,0),
+                     amp_func=pw_amp(k,src_pt))]
 
 sim = mp.Simulation(resolution=resolution,
                     cell_size=cell_size,
                     boundary_layers=pml_layers,
                     geometry=[],
-                    k_point=k,
                     sources=sources,
+                    k_point=k,
                     symmetries=sym)
 
-_nearfield = sim.add_near2far(freq, 0, 1, mp.Near2FarRegion(src_pt, size=mp.Vector3(sx,dpad,0)))
-#_nearfield = sim.add_near2far(freq, 0, 1, mp.Near2FarRegion(mp.Vector3(0,0,0), size=mp.Vector3(sx-2*dpml,sy-2*dpml,0)))
+nf_pt = mp.Vector3(0,sy/2-dpml-dpad/2,0)
+_nearfield = sim.add_near2far(freq, 0, 1, mp.Near2FarRegion(nf_pt, size=mp.Vector3(sx,0,0), weight=1))
 
-sim.run(until=100)
+sim.run(until=ts)
 
-_Ez = np.zeros((1001,2),dtype=np.complex128)
-d = 1.7e8
+_E = np.zeros((1001,1),dtype=np.complex128)
+'''todo: figure out what the best distance d is (do the transform described for ewald sphere)'''
+d = 1e5*np.sin(theta)
 for n in range(-500,501):
-    ffx = sim.get_farfield(_nearfield, mp.Vector3(n/10,sy/2-dpml-dpad/2,d))
-    ffy = sim.get_farfield(_nearfield, mp.Vector3(0,n/10,d))
-    _Ez[n,:] = (ffx[0],ffy[0])
+    ffy = sim.get_farfield(_nearfield, mp.Vector3(n/10,d,0))
+    _E[n] = ffy[1]
 
 _eps_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Dielectric)
-_ez_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ez)
+_ez_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ey)
 
 sim.reset_meep()
 
@@ -177,36 +156,18 @@ sim = mp.Simulation(resolution=resolution,
                     cell_size=cell_size,
                     boundary_layers=pml_layers,
                     geometry=geometry,
-                    k_point=k,
                     sources=sources,
+                    k_point=k,
                     symmetries=sym)
 
-nearfield = sim.add_near2far(freq, 0, 1, mp.Near2FarRegion(src_pt, size=mp.Vector3(sx,dpad,0)))
-#nearfield = sim.add_near2far(freq, 0, 1, mp.Near2FarRegion(mp.Vector3(0,0,0), size=mp.Vector3(sx-2*dpml,sy-2*dpml,0)))
+nearfield = sim.add_near2far(freq, 0, 1, mp.Near2FarRegion(nf_pt, size=mp.Vector3(sx,0,0), weight=1))
 
-sim.run(until=100)
+sim.run(until=ts)
 
-Ez = np.zeros((1001,2),dtype=np.complex128)
+E = np.zeros((1001,1),dtype=np.complex128)
 for n in range(-500,501):
-    ffx = sim.get_farfield(nearfield, mp.Vector3(n/10,sy/2-dpml-dpad/2,d))
-    ffy = sim.get_farfield(nearfield, mp.Vector3(0,n/10,d))
-    Ez[n,:] = (ffx[0],ffy[0])
-
-# sim.output_farfields(nearfield,
-#                     "ff-x-soltwisch2017",
-#                     resolution,
-#                     where=mp.Volume(mp.Vector3(0,0,1.5e4), size=mp.Vector3(100,0,0)))
-# sim.output_farfields(nearfield,
-#                     "ff-y-soltwisch2017",
-#                     resolution,
-#                     where=mp.Volume(mp.Vector3(0,0,1.5e4), size=mp.Vector3(0,100,0)))
-
-# d = np.zeros((101,101))
-# ez = np.abs(Ez)**2
-# for i in range(Ez.shape[0]):
-#     for j in range(Ez.shape[0]):
-#         d[i,j] = np.sqrt(ez[i,0]*ez[j,1])
-# plt.imshow(d, interpolation='spline36', cmap='RdBu')
+    ffy = sim.get_farfield(nearfield, mp.Vector3(n/10,d,0))
+    E[n] = ffy[1]
 
 
 '''looks like symmetry is broken because something is ever so slightly off-center (discretization issue)'''
@@ -227,7 +188,7 @@ def Iq(x,E):
     plt.show()
 
 eps_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Dielectric)
-ez_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ez)
+ez_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ey)
 
 #plot geoms with field
 plt.figure(dpi=100)
@@ -236,9 +197,9 @@ plt.imshow((np.abs(ez_data)**2).transpose()[::-1], interpolation='spline36', cma
 plt.axis('off')
 plt.show()
 
-to_plot = Ez[:,0] - _Ez[:,0]
+to_plot = E - _E
 
 #background
-Iq(np.linspace(-50,50,1001), _Ez[:,0])
+Iq(np.linspace(-50,50,1001), _E)
 #scattered
 Iq(np.linspace(-50,50,1001),to_plot)
