@@ -26,12 +26,12 @@ br = 1.579             #bottom radius
 sa = 90.91              #sidewall angle (deg)
 
 # #G2 params in 10^-8m
-# gp = 15.             # grating period
-# gh = 11.950               # grating height
-# lw = 6.730              #line width
-# tr = 0.916              #top radius
-# br = 1.302             #bottom radius
-# sa = 84.73              #sidewall angle (deg)
+gp = 15.             # grating period
+gh = 11.950               # grating height
+lw = 6.730              #line width
+tr = 0.916              #top radius
+br = 1.302             #bottom radius
+sa = 84.73              #sidewall angle (deg)
 
 tw = gh/np.tan(sa*2*np.pi/360) # part to subtract from top of grating width
 a = (gh-tr)/np.tan(sa*2*np.pi/360) # intermediate for vertex calculation
@@ -109,7 +109,6 @@ ng = 1 #index of medium wave is propagating in
 
 theta = 1.09 * 2*np.pi/360 #in fig 6 these are in interval [0.3,1.2]
 k = mp.Vector3(0,-np.sin(theta),0).scale(freq*ng) # scaled field incidence
-k = mp.Vector3(0,0,0)
 src_pt = mp.Vector3(0,sy/2-dpml,0) # plane of incidence top of cell
 
 def pw_amp(k,x0):
@@ -142,13 +141,14 @@ sim.run(until=ts)
 
 _E = np.zeros((1001,1),dtype=np.complex128)
 '''todo: figure out what the best distance d is (do the transform described for ewald sphere)'''
-d = 1e5*np.sin(theta)
+d = 1e3
 for n in range(-500,501):
-    ffy = sim.get_farfield(_nearfield, mp.Vector3(n/10,d,0))
+    ffy = sim.get_farfield(_nearfield, mp.Vector3(d*np.sin(n*np.pi/1000),d*np.cos(n*np.pi/1000),0))
     _E[n] = ffy[1]
 
-_eps_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Dielectric)
-_ez_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ey)
+_eps = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Dielectric)
+_ex = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ex)
+_ey = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ey)
 
 sim.reset_meep()
 
@@ -166,40 +166,45 @@ sim.run(until=ts)
 
 E = np.zeros((1001,1),dtype=np.complex128)
 for n in range(-500,501):
-    ffy = sim.get_farfield(nearfield, mp.Vector3(n/10,d,0))
+    ffy = sim.get_farfield(nearfield, mp.Vector3(d*np.sin(n*np.pi/1000),d*np.cos(n*np.pi/1000),0))
     E[n] = ffy[1]
 
 
 '''looks like symmetry is broken because something is ever so slightly off-center (discretization issue)'''
-def Iq(x,E):
+def Iq(alpha,E):
     c = 1
     n = 1
     e0 = 1
     A = c*n*e0/2
     I = A*(np.abs(E)**2)
     I = I/np.amax(I)
-    q = (2*np.pi/wv)*np.arctan(x/d)
+    q = (2*np.pi/wv)*np.sin(alpha)
 
     plt.plot(q/10,I)
-    plt.xlim(-0.7,0.7)
+    # plt.xlim(-7,7)
     plt.ylim(0,1)
     plt.ylabel('Rel. Intensity')
     plt.xlabel('q (1/nm)')
     plt.show()
 
-eps_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Dielectric)
-ez_data = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ey)
+eps = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Dielectric)
+ex = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ex)
+ey = sim.get_array(center=mp.Vector3(), size=cell_size, component=mp.Ey)
 
 #plot geoms with field
 plt.figure(dpi=100)
-plt.imshow(eps_data.transpose()[::-1], interpolation='spline36', cmap='binary')
-plt.imshow((np.abs(ez_data)**2).transpose()[::-1], interpolation='spline36', cmap='RdBu', alpha=0.9)
+plt.imshow(eps.transpose()[::-1], interpolation='spline36', cmap='binary')
+inten = np.abs(ey)**2
+inten = inten/np.amax(inten)
+plt.imshow(inten.transpose()[::-1], interpolation='spline36', cmap='hot', alpha=0.9)
+plt.colorbar()
 plt.axis('off')
 plt.show()
 
 to_plot = E - _E
 
 #background
-Iq(np.linspace(-50,50,1001), _E)
+alpha = np.linspace(-np.pi/2,np.pi/2,1001)
+Iq(alpha, _E)
 #scattered
-Iq(np.linspace(-50,50,1001),to_plot)
+Iq(alpha,to_plot)
