@@ -1,7 +1,7 @@
 # xray_scattering
 
 # Introduction
-This repository contains code to simulate X-Ray scattering off a sphere in ```sphere2d.py``` and code to replicate the simulations of *Reconstructing detailed line profiles of lamellar gratings from GISAXS patterns with a Maxwell solver* (Soltwisch et. al. 2017) in ```grating2.py```.
+This repository contains code to simulate X-Ray scattering off a sphere in ```sphere_3d.py``` and code to replicate the simulations of *Reconstructing detailed line profiles of lamellar gratings from GISAXS patterns with a Maxwell solver* (Soltwisch et. al. 2017) in ```soltwisch.py```.
 
 These simulations are written in Python with [MEEP](https://meep.readthedocs.io/en/latest/), an open source finite-difference time-domain package for solving maxwell's equations.
 
@@ -30,6 +30,6 @@ In order to get the code, either clone this repo with:
 ```
 git clone [repo-url]
 ```
-Or download each file manually from this page.
+Or copy and paste the code directly into your own file.
 
 If you encounter any issues, the [MEEP installation instructions](https://meep.readthedocs.io/en/latest/) may be helpful.
