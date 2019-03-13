@@ -5,7 +5,9 @@ from tqdm import tqdm
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 
-'''this code is built to match the publication Soltwisch et. al. 2017'''
+'''this code is built to match the publication:
+Reconstructing detailed line profiles of lamellar gratings
+from GISAXS patterns with a Maxwell solver (Soltwisch et. al. 2017)'''
 
 #main simulation loop
 #all distances below are expressed in units of 10^-10m
@@ -58,6 +60,50 @@ def run():
     mat = build_mat(delta=delta[e], beta=beta[e], f=f) #use base frequency to get material params right
     geom = build_geom(sx=sx, sy=sy, dsub=dsub, gp=gp, gh=gh, lw=lw, tr=tr, br=br, sa=sa, material=mat)
 
+    #first run empty sim for the background
+    sim = mp.Simulation(cell_size=cell,
+                        resolution=resolution,
+                        Courant=S,
+                        k_point=k_point,
+                        boundary_layers=pml_layers,
+                        geometry=[],
+                        sources=src,
+                        force_complex_fields=True,
+                        eps_averaging=True)
+
+    #nearfield needs to be specified in a region of homogenous space
+    nearfield = sim.add_near2far(f, 0, 1,
+            mp.Near2FarRegion(mp.Vector3(y=-sy/2+100), size=mp.Vector3(sx), weight=1, direction=mp.Z))
+
+    #run til things settle
+    sim.run(until=5000)
+
+    _eps, _I = localfield(sim=sim, sx=sx, sy=sy)
+
+    _inten = _I/np.amax(_I)
+    plt.imshow(_eps.transpose(), cmap='binary')
+    plt.imshow(_inten.transpose(), cmap='gist_heat', alpha=0.9)
+    plt.colorbar()
+    plt.show()
+
+    #calculate far field approximation through meep
+    d = 1.7e10 #min detector distance in paper
+    steps = 50
+    neighbors = 4
+    _q, _farI = farfield(sim=sim, nearfield=nearfield, sx=sx, alpha=alpha, wavelength=wvl, d=d, steps=steps, neighbors=neighbors)
+
+    #plot far field (compare to Fig. 6)
+    plt.plot(_q, _farI/np.amax(_farI))
+    plt.title('Far Field of E = ' + str(E) + 'keV')
+    plt.xlabel('$\\Delta q_x (nm^{-1})$')
+    plt.ylabel('Relative Intensity')
+    plt.axis('on')
+    plt.xlim(-0.7,0.7)
+    plt.show()
+
+    #now run the same simulation with the gratings
+    sim.reset_meep()
+
     sim = mp.Simulation(cell_size=cell,
                         resolution=resolution,
                         Courant=S,
@@ -93,6 +139,14 @@ def run():
 
     #plot far field (compare to Fig. 6)
     plt.plot(q, farI/np.amax(farI))
+    plt.title('Far Field of E = ' + str(E) + 'keV')
+    plt.xlabel('$\\Delta q_x (nm^{-1})$')
+    plt.ylabel('Relative Intensity')
+    plt.axis('on')
+    plt.xlim(-0.7,0.7)
+    plt.show()
+
+    plt.plot(q, (farI-_farI)/np.amax(farI-_farI))
     plt.title('Far Field of E = ' + str(E) + 'keV')
     plt.xlabel('$\\Delta q_x (nm^{-1})$')
     plt.ylabel('Relative Intensity')
