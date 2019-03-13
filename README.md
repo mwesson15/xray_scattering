@@ -26,9 +26,10 @@ When finished, you can deactivate the environment with:
 source deactivate meep
 ```
 
-In order to clone this repo, use the command:
+In order to get the code, either clone this repo with:
 ```
 git clone [repo-url]
 ```
+Or download each file manually from this page.
 
 If you encounter any issues, the [MEEP installation instructions](https://meep.readthedocs.io/en/latest/) may be helpful.
