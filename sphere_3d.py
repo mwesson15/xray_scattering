@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+#All unit lengths are in angstroms
 SphereRadius = 5
 
 sx = 2*SphereRadius+20
@@ -14,7 +15,7 @@ sz = sy
 # sy = 10
 # sz = 10
 
-wavelength = 1.67
+wavelength = 1.67 #E=5.5keV
 f=1/wavelength
 df = 0.1
 resolution = 4
