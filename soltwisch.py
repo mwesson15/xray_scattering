@@ -73,7 +73,9 @@ def run():
 
     #nearfield needs to be specified in a region of homogenous space
     nearfield = sim.add_near2far(f, 0, 1,
-            mp.Near2FarRegion(mp.Vector3(y=-sy/2+100), size=mp.Vector3(sx), weight=1, direction=mp.Z))
+            mp.Near2FarRegion(mp.Vector3(y=-sy/2), size=mp.Vector3(sx), weight=-1, direction=mp.Y),
+            mp.Near2FarRegion(mp.Vector3(-sx/2,-dsub), size=mp.Vector3(y=sy-dsub), weight=-1, direction=mp.X),
+            mp.Near2FarRegion(mp.Vector3(sx/2,-dsub), size=mp.Vector3(y=sy-dsub), weight=1, direction=mp.X))
 
     #run til things settle
     sim.run(until=5000)
@@ -98,7 +100,7 @@ def run():
     plt.xlabel('$\\Delta q_x (nm^{-1})$')
     plt.ylabel('Relative Intensity')
     plt.axis('on')
-    plt.xlim(-0.7,0.7)
+    plt.xlim(-0.4,0.4)
     plt.show()
 
     #now run the same simulation with the gratings
@@ -116,7 +118,9 @@ def run():
 
     #nearfield needs to be specified in a region of homogenous space
     nearfield = sim.add_near2far(f, 0, 1,
-            mp.Near2FarRegion(mp.Vector3(y=-sy/2+100), size=mp.Vector3(sx), weight=1, direction=mp.Z))
+            mp.Near2FarRegion(mp.Vector3(y=-sy/2), size=mp.Vector3(sx), weight=-1, direction=mp.Y),
+            mp.Near2FarRegion(mp.Vector3(-sx/2,-dsub), size=mp.Vector3(y=sy-dsub), weight=-1, direction=mp.X),
+            mp.Near2FarRegion(mp.Vector3(sx/2,-dsub), size=mp.Vector3(y=sy-dsub), weight=1, direction=mp.X))
 
     #run til things settle
     sim.run(until=5000)
@@ -143,7 +147,7 @@ def run():
     plt.xlabel('$\\Delta q_x (nm^{-1})$')
     plt.ylabel('Relative Intensity')
     plt.axis('on')
-    plt.xlim(-0.7,0.7)
+    plt.xlim(-0.4,0.4)
     plt.show()
 
     plt.plot(q, (farI-_farI)/np.amax(farI-_farI))
@@ -151,7 +155,7 @@ def run():
     plt.xlabel('$\\Delta q_x (nm^{-1})$')
     plt.ylabel('Relative Intensity')
     plt.axis('on')
-    plt.xlim(-0.7,0.7)
+    plt.xlim(-0.4,0.4)
     plt.show()
 
 
@@ -217,6 +221,9 @@ def farfield(sim, nearfield, sx, alpha, wavelength, d, steps, neighbors):
     farI = np.sum(farE,axis=2)
     farI = np.sum(farI,axis=0)
     farI = farI.astype(np.single)
+
+    #remove 0th order
+    farI[steps-5:steps+6] = 0
 
     #build qx (qy in paper) array according to equations in paper
     q = (2*np.pi/wavelength)*np.sin(thet)*np.cos(alph)/10
